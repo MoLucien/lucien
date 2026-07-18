@@ -40,12 +40,6 @@ function initTypewriter() {
   tick();
 }
 
-function initEnterAnimation() {
-  setTimeout(() => {
-    document.body.classList.remove('entering');
-  }, 2400);
-}
-
 function initMusicPlayer() {
   const audio = document.getElementById('music');
   const playBtn = document.getElementById('playBtn');
@@ -135,28 +129,33 @@ function initMusicPlayer() {
 
   if (TRACKS.length) loadTrack(0);
 
-  function tryAutoplay() {
+  function playOnEnter() {
     audio.play().then(() => {
       playBtn.innerHTML = PAUSE_SVG;
       playBtn.setAttribute('aria-label', 'Pause');
     }).catch(() => {});
   }
-  tryAutoplay();
-  const onFirstInteract = () => {
-    tryAutoplay();
-    document.removeEventListener('click', onFirstInteract);
-    document.removeEventListener('keydown', onFirstInteract);
-    document.removeEventListener('touchstart', onFirstInteract);
-  };
-  document.addEventListener('click', onFirstInteract);
-  document.addEventListener('keydown', onFirstInteract);
-  document.addEventListener('touchstart', onFirstInteract);
+
+  return playOnEnter;
 }
 
 function init() {
-  initEnterAnimation();
-  initTypewriter();
-  initMusicPlayer();
+  const enterText = document.querySelector('.page-enter-text');
+  const playOnEnter = initMusicPlayer();
+
+  function onEnter() {
+    enterText.classList.add('entered');
+    document.body.classList.remove('entering');
+    initTypewriter();
+    playOnEnter();
+    enterText.removeEventListener('click', onEnter);
+    enterText.removeEventListener('keydown', onEnter);
+    enterText.removeEventListener('touchstart', onEnter);
+  }
+
+  enterText.addEventListener('click', onEnter);
+  enterText.addEventListener('keydown', onEnter);
+  enterText.addEventListener('touchstart', onEnter);
 }
 
 if (document.readyState === 'loading') {
