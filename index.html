@@ -24,14 +24,17 @@
   <link rel="icon" href="./assets/avatar.png" sizes="any">
 
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Onest:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="preload" as="video" href="./assets/background.mp4" type="video/mp4">
 
 </head>
 
 <body class="entering">
 
   <video id="background" autoplay muted loop playsinline preload="auto"
-         poster="./assets/avatar.png"
+         poster="./assets/bg-poster.jpg"
          disablepictureinpicture
          disableremoteplayback>
     <source src="./assets/background.mp4" type="video/mp4">
@@ -39,13 +42,16 @@
 
   <div class="overlay"></div>
 
-  <div class="page-enter-text">⚝ MoLucien's Domain ⚝</div>
+  <div class="page-enter-text" role="button" tabindex="0" aria-label="Enter site">⚝ MoLucien's Domain ⚝</div>
 
   <div class="card-wrap">
     <div class="card">
 
       <div class="avatar-box">
-        <img src="./assets/avatar.png" class="avatar" alt="avatar">
+        <picture>
+          <source srcset="./assets/avatar.webp" type="image/webp">
+          <img src="./assets/avatar.png" class="avatar" alt="MoLucien avatar" width="110" height="110">
+        </picture>
       </div>
 
       <h1 class="username" data-text="⚝ MoLucien ⚝">⚝ MoLucien ⚝</h1>
@@ -98,7 +104,8 @@
             </button>
             <div class="volume-wrap" data-tooltip="Volume">
               <svg class="volume-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77M16.5 12A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02M3 9v6h4l5 5V4L7 9H3z"/></svg>
-              <input type="range" min="0" max="100" step="1" value="100" class="volume" id="volume">
+              <label for="volume" class="sr-only">Volume</label>
+              <input type="range" min="0" max="100" step="1" value="100" class="volume" id="volume" aria-label="Volume">
             </div>
           </div>
         </div>
@@ -107,7 +114,7 @@
     </div>
   </div>
 
-  <audio id="music" preload="auto" autoplay>
+  <audio id="music" preload="auto">
     <source src="./assets/music.mp3" type="audio/mpeg">
   </audio>
 

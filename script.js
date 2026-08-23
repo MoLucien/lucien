@@ -127,6 +127,10 @@ function initMusicPlayer() {
   window.addEventListener('mousemove', (e) => { if (dragging) seekFromEvent(e); });
   window.addEventListener('mouseup', () => { dragging = false; });
 
+  progressBar.addEventListener('touchstart', (e) => { dragging = true; seekFromEvent(e); }, { passive: true });
+  window.addEventListener('touchmove', (e) => { if (dragging) seekFromEvent(e); }, { passive: true });
+  window.addEventListener('touchend', () => { dragging = false; });
+
   if (TRACKS.length) loadTrack(0);
 
   function playOnEnter() {
@@ -149,13 +153,20 @@ function init() {
     initTypewriter();
     playOnEnter();
     enterText.removeEventListener('click', onEnter);
-    enterText.removeEventListener('keydown', onEnter);
+    enterText.removeEventListener('keydown', onKeyEnter);
     enterText.removeEventListener('touchstart', onEnter);
   }
 
+  function onKeyEnter(e) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      onEnter();
+    }
+  }
+
   enterText.addEventListener('click', onEnter);
-  enterText.addEventListener('keydown', onEnter);
-  enterText.addEventListener('touchstart', onEnter);
+  enterText.addEventListener('keydown', onKeyEnter);
+  enterText.addEventListener('touchstart', onEnter, { passive: true });
 }
 
 if (document.readyState === 'loading') {

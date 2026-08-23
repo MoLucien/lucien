@@ -26,6 +26,27 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.page-enter-text:focus-visible,
+.social:focus-visible,
+.ctrl-btn:focus-visible,
+.progress:focus-visible,
+.volume:focus-visible {
+  outline: 2px solid var(--iconColor);
+  outline-offset: 3px;
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -445,6 +466,16 @@ body.entering .card-wrap {
   border: none;
   cursor: pointer;
   box-shadow: 0 0 6px var(--iconColor);
+}
+
+@media (max-height: 700px) {
+  html, body {
+    overflow-y: auto;
+  }
+  body {
+    align-items: flex-start;
+    padding: 20px 0;
+  }
 }
 
 @media (max-width: 600px) {
