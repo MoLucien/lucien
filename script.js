@@ -178,13 +178,8 @@ function initMusicPlayer() {
   const musicCurrent = document.getElementById('musicCurrent');
   const musicDuration = document.getElementById('musicDuration');
 
-  if (!audio || !playBtn) {
-    console.error('音乐播放器元素未找到！');
-    return function() {};
-  }
-
   let currentIdx = 0;
-  let isPlaying = false;
+  let playAttempted = false; // 是否已经尝试过播放
 
   const PLAY_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
   const PAUSE_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M14 19V5q0-.425.288-.713T15 4h5q.425 0 .713.288T21 5v14q0 .425-.288.713T20 20h-5q-.425 0-.712-.288T14 19M3 19V5q0-.425.288-.713T4 4h5q.425 0 .713.288T10 5v14q0 .425-.288.713T9 20H4q-.425 0-.712-.288T3 19"/></svg>';
@@ -194,17 +189,17 @@ function initMusicPlayer() {
     currentIdx = (idx + TRACKS.length) % TRACKS.length;
     const track = TRACKS[currentIdx];
     audio.src = track.src;
-    if (musicTitle) musicTitle.textContent = track.title;
-    if (musicCover) musicCover.src = track.cover;
-    if (progressFill) progressFill.style.width = '0%';
-    if (progressThumb) progressThumb.style.left = '0%';
-    if (musicCurrent) musicCurrent.textContent = '0:00';
-    if (musicDuration) musicDuration.textContent = '0:00';
+    musicTitle.textContent = track.title;
+    musicCover.src = track.cover;
+    progressFill.style.width = '0%';
+    progressThumb.style.left = '0%';
+    musicCurrent.textContent = '0:00';
+    musicDuration.textContent = '0:00';
   }
 
   function togglePlay() {
     if (audio.paused) {
-      audio.play().catch(e => console.warn('播放失败:', e));
+      audio.play().catch(() => {});
     } else {
       audio.pause();
     }
@@ -217,37 +212,23 @@ function initMusicPlayer() {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   }
 
-  // 添加调试日志
-  console.log('音乐播放器初始化完成，音频元素:', audio);
-
   playBtn.addEventListener('click', togglePlay);
-  prevBtn && prevBtn.addEventListener('click', () => { loadTrack(currentIdx - 1); audio.play().catch(() => {}); });
-  nextBtn && nextBtn.addEventListener('click', () => { loadTrack(currentIdx + 1); audio.play().catch(() => {}); });
+  prevBtn.addEventListener('click', () => { loadTrack(currentIdx - 1); audio.play().catch(() => {}); });
+  nextBtn.addEventListener('click', () => { loadTrack(currentIdx + 1); audio.play().catch(() => {}); });
 
-  audio.addEventListener('play', () => { 
-    playBtn.innerHTML = PAUSE_SVG; 
-    playBtn.setAttribute('aria-label', t('ariaPause'));
-    isPlaying = true;
-    console.log('音乐已开始播放');
-  });
-  
-  audio.addEventListener('pause', () => { 
-    playBtn.innerHTML = PLAY_SVG; 
-    playBtn.setAttribute('aria-label', t('ariaPlay'));
-    isPlaying = false;
-  });
+  audio.addEventListener('play', () => { playBtn.innerHTML = PAUSE_SVG; playBtn.setAttribute('aria-label', t('ariaPause')); });
+  audio.addEventListener('pause', () => { playBtn.innerHTML = PLAY_SVG; playBtn.setAttribute('aria-label', t('ariaPlay')); });
 
   audio.addEventListener('loadedmetadata', () => {
-    if (musicDuration) musicDuration.textContent = formatTime(audio.duration);
-    console.log('音频元数据加载完成，时长:', audio.duration);
+    musicDuration.textContent = formatTime(audio.duration);
   });
 
   audio.addEventListener('timeupdate', () => {
     if (!audio.duration) return;
     const pct = (audio.currentTime / audio.duration) * 100;
-    if (progressFill) progressFill.style.width = pct + '%';
-    if (progressThumb) progressThumb.style.left = pct + '%';
-    if (musicCurrent) musicCurrent.textContent = formatTime(audio.currentTime);
+    progressFill.style.width = pct + '%';
+    progressThumb.style.left = pct + '%';
+    musicCurrent.textContent = formatTime(audio.currentTime);
   });
 
   audio.addEventListener('ended', () => {
@@ -255,72 +236,72 @@ function initMusicPlayer() {
     audio.play().catch(() => {});
   });
 
-  audio.addEventListener('error', (e) => {
-    console.error('音频加载错误:', e, audio.error);
-  });
-
-  if (volume) {
-    volume.addEventListener('input', () => {
-      audio.volume = parseFloat(volume.value) / 100;
-    });
+  volume.addEventListener('input', () => {
     audio.volume = parseFloat(volume.value) / 100;
-  }
+  });
+  audio.volume = parseFloat(volume.value) / 100;
 
   let dragging = false;
   function seekFromEvent(e) {
-    if (!progressBar) return;
     const rect = progressBar.getBoundingClientRect();
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
     const pct = Math.max(0, Math.min(1, x / rect.width));
     if (audio.duration) audio.currentTime = pct * audio.duration;
   }
-  
-  if (progressBar) {
-    progressBar.addEventListener('mousedown', (e) => { dragging = true; seekFromEvent(e); });
-    window.addEventListener('mousemove', (e) => { if (dragging) seekFromEvent(e); });
-    window.addEventListener('mouseup', () => { dragging = false; });
+  progressBar.addEventListener('mousedown', (e) => { dragging = true; seekFromEvent(e); });
+  window.addEventListener('mousemove', (e) => { if (dragging) seekFromEvent(e); });
+  window.addEventListener('mouseup', () => { dragging = false; });
 
-    progressBar.addEventListener('touchstart', (e) => { dragging = true; seekFromEvent(e); }, { passive: true });
-    window.addEventListener('touchmove', (e) => { if (dragging) seekFromEvent(e); }, { passive: true });
-    window.addEventListener('touchend', () => { dragging = false; });
-  }
+  progressBar.addEventListener('touchstart', (e) => { dragging = true; seekFromEvent(e); }, { passive: true });
+  window.addEventListener('touchmove', (e) => { if (dragging) seekFromEvent(e); }, { passive: true });
+  window.addEventListener('touchend', () => { dragging = false; });
 
   if (TRACKS.length) loadTrack(0);
 
-  // 核心播放函数 - 增加调试日志
-  function playOnEnter() {
-    console.log('尝试播放音乐...');
+  // ============ 核心：自动播放增强方案 ============
+  
+  // 尝试播放函数
+  function attemptPlay() {
+    if (playAttempted) return; // 已经尝试过就不再重复
+    playAttempted = true;
+    
     audio.play()
       .then(() => {
-        console.log('✅ 音乐播放成功！');
         playBtn.innerHTML = PAUSE_SVG;
         playBtn.setAttribute('aria-label', t('ariaPause'));
+        console.log('✅ 音乐播放成功！');
+        // 播放成功后移除所有备用监听器
+        document.removeEventListener('click', handleAnyInteraction);
+        document.removeEventListener('touchstart', handleAnyInteraction);
+        document.removeEventListener('keydown', handleAnyInteraction);
       })
       .catch((error) => {
-        console.warn('⚠️ 自动播放被阻止，等待用户交互:', error);
-        // 绑定用户交互事件
-        const handleUserInteraction = () => {
-          console.log('用户交互触发，尝试播放...');
-          audio.play()
-            .then(() => {
-              console.log('✅ 用户交互后播放成功！');
-              playBtn.innerHTML = PAUSE_SVG;
-              playBtn.setAttribute('aria-label', t('ariaPause'));
-            })
-            .catch(e => console.error('❌ 用户交互后仍播放失败:', e));
-          document.removeEventListener('click', handleUserInteraction);
-          document.removeEventListener('touchstart', handleUserInteraction);
-          document.removeEventListener('keydown', handleUserInteraction);
-        };
-        
-        document.addEventListener('click', handleUserInteraction);
-        document.addEventListener('touchstart', handleUserInteraction);
-        document.addEventListener('keydown', handleUserInteraction);
+        console.warn('⚠️ 自动播放被阻止:', error.message);
+        // 如果被阻止，监听用户的下一次交互
+        document.addEventListener('click', handleAnyInteraction, { once: true });
+        document.addEventListener('touchstart', handleAnyInteraction, { once: true });
+        document.addEventListener('keydown', handleAnyInteraction, { once: true });
       });
   }
 
-  // 也暴露一个手动播放方法供调试
-  window.__debugPlay = playOnEnter;
+  // 用户交互处理函数
+  function handleAnyInteraction() {
+    if (!audio.paused) return; // 已经在播放就不重复触发
+    
+    audio.play()
+      .then(() => {
+        playBtn.innerHTML = PAUSE_SVG;
+        playBtn.setAttribute('aria-label', t('ariaPause'));
+        console.log('✅ 用户交互后播放成功！');
+      })
+      .catch(() => {});
+  }
+
+  // 返回播放函数
+  function playOnEnter() {
+    // 延迟一点点，确保音频元素已完全加载
+    setTimeout(attemptPlay, 200);
+  }
 
   return playOnEnter;
 }
@@ -420,8 +401,6 @@ function initParallax() {
 }
 
 function init() {
-  console.log('🔵 页面初始化开始...');
-  
   currentLang = detectLang();
   applyLang(currentLang);
   initLangSwitch();
@@ -429,26 +408,13 @@ function init() {
   initParallax();
 
   const enterText = document.querySelector('.page-enter-text');
-  console.log('📌 进入按钮元素:', enterText);
-  
-  if (!enterText) {
-    console.error('❌ 找不到 .page-enter-text 元素！');
-    return;
-  }
-
   const playOnEnter = initMusicPlayer();
 
   function onEnter() {
-    console.log('🚀 用户点击"进入"');
     enterText.classList.add('entered');
     document.body.classList.remove('entering');
     initTypewriter();
-    
-    // 延迟一点点执行播放，确保UI更新完成
-    setTimeout(() => {
-      console.log('⏳ 调用 playOnEnter()...');
-      playOnEnter();
-    }, 100);
+    playOnEnter(); // 调用播放函数
     
     enterText.removeEventListener('click', onEnter);
     enterText.removeEventListener('keydown', onKeyEnter);
@@ -465,10 +431,6 @@ function init() {
   enterText.addEventListener('click', onEnter);
   enterText.addEventListener('keydown', onKeyEnter);
   enterText.addEventListener('touchstart', onEnter, { passive: true });
-
-  console.log('✅ 页面初始化完成！');
-  console.log('💡 提示：点击"进入"按钮后会尝试播放音乐');
-  console.log('🔧 调试：在控制台输入 __debugPlay() 可手动触发播放');
 }
 
 if (document.readyState === 'loading') {
