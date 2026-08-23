@@ -1,4 +1,4 @@
-﻿const CONFIG = {
+const CONFIG = {
   iconColor: '#e8e8e8',
   typewriterSpeed: 80,
   typewriterDeleteSpeed: 35,
@@ -261,7 +261,17 @@ function initMusicPlayer() {
     audio.play().then(() => {
       playBtn.innerHTML = PAUSE_SVG;
       playBtn.setAttribute('aria-label', t('ariaPause'));
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('[music] 首次播放失败,尝试静音解锁后重试:', err);
+      audio.muted = true;
+      audio.play().then(() => {
+        audio.muted = false;
+        playBtn.innerHTML = PAUSE_SVG;
+        playBtn.setAttribute('aria-label', t('ariaPause'));
+      }).catch((err2) => {
+        console.error('[music] 静音重试仍然失败,浏览器拒绝自动播放:', err2);
+      });
+    });
   }
 
   return playOnEnter;
