@@ -1,6 +1,5 @@
 ﻿const CONFIG = {
   iconColor: '#e8e8e8',
-  typewriterTexts: ['Digital Dream ✦ Chill Vibes', 'Welcome To My Domain', 'Stay A While'],
   typewriterSpeed: 80,
   typewriterDeleteSpeed: 35,
   typewriterPause: 1500,
@@ -10,14 +9,139 @@ const TRACKS = [
   { title: 'Change Your Life', src: './assets/music.mp3', cover: './assets/cover.gif' },
 ];
 
+const TRANSLATIONS = {
+  'zh-CN': {
+    enterText: '⚝ 点击进入 MoLucien 的领域 ⚝',
+    typewriterTexts: ['数字幻梦 ✦ 惬意氛围', '欢迎来到我的领域', '留一会儿吧'],
+    locationText: '身处数字虚空',
+    tooltipLocation: '位置',
+    tooltipVolume: '音量',
+    tooltipBilibili: '哔哩哔哩',
+    ariaPrev: '上一首',
+    ariaNext: '下一首',
+    ariaPlay: '播放',
+    ariaPause: '暂停',
+    ariaVolume: '音量',
+    ariaEnter: '进入网站',
+  },
+  'zh-TW': {
+    enterText: '⚝ 點擊進入 MoLucien 的領域 ⚝',
+    typewriterTexts: ['數位幻夢 ✦ 愜意氛圍', '歡迎來到我的領域', '留一會兒吧'],
+    locationText: '身處數位虛空',
+    tooltipLocation: '位置',
+    tooltipVolume: '音量',
+    tooltipBilibili: '嗶哩嗶哩',
+    ariaPrev: '上一首',
+    ariaNext: '下一首',
+    ariaPlay: '播放',
+    ariaPause: '暫停',
+    ariaVolume: '音量',
+    ariaEnter: '進入網站',
+  },
+  en: {
+    enterText: "⚝ MoLucien's Domain ⚝",
+    typewriterTexts: ['Digital Dream ✦ Chill Vibes', 'Welcome To My Domain', 'Stay A While'],
+    locationText: 'In The Digital Void',
+    tooltipLocation: 'Location',
+    tooltipVolume: 'Volume',
+    tooltipBilibili: 'Bilibili',
+    ariaPrev: 'Previous',
+    ariaNext: 'Next',
+    ariaPlay: 'Play',
+    ariaPause: 'Pause',
+    ariaVolume: 'Volume',
+    ariaEnter: 'Enter site',
+  },
+};
+
+const LANG_STORAGE_KEY = 'lucien-lang';
+let currentLang = 'en';
+
+function detectLang() {
+  try {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    if (saved && TRANSLATIONS[saved]) return saved;
+  } catch (e) {}
+  const nav = (navigator.language || 'en').toLowerCase();
+  if (nav.includes('hant') || nav === 'zh-tw' || nav === 'zh-hk') return 'zh-TW';
+  if (nav.startsWith('zh')) return 'zh-CN';
+  return 'en';
+}
+
+function t(key) {
+  return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) ?? TRANSLATIONS.en[key];
+}
+
+function applyLang(lang) {
+  if (!TRANSLATIONS[lang]) lang = 'en';
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) {}
+
+  const enterEl = document.querySelector('.page-enter-text');
+  if (enterEl) {
+    enterEl.textContent = t('enterText');
+    enterEl.setAttribute('aria-label', t('ariaEnter'));
+  }
+
+  const locationText = document.querySelector('.location-text');
+  if (locationText) locationText.textContent = t('locationText');
+
+  const locationEl = document.querySelector('.location');
+  if (locationEl) locationEl.setAttribute('data-tooltip', t('tooltipLocation'));
+
+  const volumeWrap = document.querySelector('.volume-wrap');
+  if (volumeWrap) volumeWrap.setAttribute('data-tooltip', t('tooltipVolume'));
+
+  const volumeInput = document.getElementById('volume');
+  if (volumeInput) volumeInput.setAttribute('aria-label', t('ariaVolume'));
+
+  const volumeLabel = document.querySelector('label[for="volume"]');
+  if (volumeLabel) volumeLabel.textContent = t('ariaVolume');
+
+  const bilibiliLink = document.querySelector('.social[href*="bilibili"]');
+  if (bilibiliLink) bilibiliLink.setAttribute('data-tooltip', t('tooltipBilibili'));
+
+  const prevBtn = document.getElementById('prevBtn');
+  if (prevBtn) prevBtn.setAttribute('aria-label', t('ariaPrev'));
+
+  const nextBtn = document.getElementById('nextBtn');
+  if (nextBtn) nextBtn.setAttribute('aria-label', t('ariaNext'));
+
+  const playBtn = document.getElementById('playBtn');
+  const audio = document.getElementById('music');
+  if (playBtn) playBtn.setAttribute('aria-label', audio && !audio.paused ? t('ariaPause') : t('ariaPlay'));
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    const isActive = btn.dataset.lang === lang;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+  });
+
+  if (!document.body.classList.contains('entering')) {
+    initTypewriter();
+  }
+}
+
+function initLangSwitch() {
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+  });
+}
+
+let twGeneration = 0;
+
 function initTypewriter() {
   const el = document.querySelector('.typewriter');
   if (!el) return;
-  const texts = CONFIG.typewriterTexts;
+  twGeneration++;
+  const myGen = twGeneration;
   let textIdx = 0, charIdx = 0, deleting = false;
 
   function tick() {
-    const full = texts[textIdx];
+    if (myGen !== twGeneration) return;
+    const texts = t('typewriterTexts');
+    const full = texts[textIdx % texts.length];
     if (!deleting) {
       el.textContent = full.slice(0, charIdx + 1);
       charIdx++;
@@ -62,10 +186,10 @@ function initMusicPlayer() {
   function loadTrack(idx) {
     if (!TRACKS.length) return;
     currentIdx = (idx + TRACKS.length) % TRACKS.length;
-    const t = TRACKS[currentIdx];
-    audio.src = t.src;
-    musicTitle.textContent = t.title;
-    musicCover.src = t.cover;
+    const track = TRACKS[currentIdx];
+    audio.src = track.src;
+    musicTitle.textContent = track.title;
+    musicCover.src = track.cover;
     progressFill.style.width = '0%';
     progressThumb.style.left = '0%';
     musicCurrent.textContent = '0:00';
@@ -91,8 +215,8 @@ function initMusicPlayer() {
   prevBtn.addEventListener('click', () => { loadTrack(currentIdx - 1); audio.play().catch(() => {}); });
   nextBtn.addEventListener('click', () => { loadTrack(currentIdx + 1); audio.play().catch(() => {}); });
 
-  audio.addEventListener('play', () => { playBtn.innerHTML = PAUSE_SVG; playBtn.setAttribute('aria-label', 'Pause'); });
-  audio.addEventListener('pause', () => { playBtn.innerHTML = PLAY_SVG; playBtn.setAttribute('aria-label', 'Play'); });
+  audio.addEventListener('play', () => { playBtn.innerHTML = PAUSE_SVG; playBtn.setAttribute('aria-label', t('ariaPause')); });
+  audio.addEventListener('pause', () => { playBtn.innerHTML = PLAY_SVG; playBtn.setAttribute('aria-label', t('ariaPlay')); });
 
   audio.addEventListener('loadedmetadata', () => {
     musicDuration.textContent = formatTime(audio.duration);
@@ -136,14 +260,114 @@ function initMusicPlayer() {
   function playOnEnter() {
     audio.play().then(() => {
       playBtn.innerHTML = PAUSE_SVG;
-      playBtn.setAttribute('aria-label', 'Pause');
+      playBtn.setAttribute('aria-label', t('ariaPause'));
     }).catch(() => {});
   }
 
   return playOnEnter;
 }
 
+function initParticles() {
+  const canvas = document.getElementById('particles');
+  if (!canvas) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    canvas.style.display = 'none';
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+  let w, h, particles;
+  const isSmall = window.innerWidth < 600;
+  const COUNT = isSmall ? 30 : 65;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+
+  function makeParticle() {
+    return {
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.6 + 0.4,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: -Math.random() * 0.25 - 0.05,
+      alpha: Math.random() * 0.5 + 0.15,
+      twinkleSpeed: Math.random() * 0.015 + 0.005,
+      twinklePhase: Math.random() * Math.PI * 2,
+    };
+  }
+
+  function setup() {
+    resize();
+    particles = Array.from({ length: COUNT }, makeParticle);
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, w, h);
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.twinklePhase += p.twinkleSpeed;
+      if (p.y < -5) { p.y = h + 5; p.x = Math.random() * w; }
+      if (p.x < -5) p.x = w + 5;
+      if (p.x > w + 5) p.x = -5;
+      const a = p.alpha * (0.5 + 0.5 * Math.sin(p.twinklePhase));
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(232, 232, 232, ${a.toFixed(3)})`;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(setup, 200);
+  });
+
+  setup();
+  tick();
+}
+
+function initParallax() {
+  const wrap = document.querySelector('.card-wrap');
+  if (!wrap) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(pointer: coarse)').matches) return;
+
+  let targetX = 0, targetY = 0, curX = 0, curY = 0;
+  const maxShift = 10;
+  const maxTilt = 4;
+
+  window.addEventListener('mousemove', (e) => {
+    targetX = (e.clientX / window.innerWidth) * 2 - 1;
+    targetY = (e.clientY / window.innerHeight) * 2 - 1;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    targetX = 0;
+    targetY = 0;
+  });
+
+  function loop() {
+    curX += (targetX - curX) * 0.06;
+    curY += (targetY - curY) * 0.06;
+    wrap.style.transform =
+      `rotateY(${(curX * maxTilt).toFixed(2)}deg) rotateX(${(-curY * maxTilt).toFixed(2)}deg) ` +
+      `translate(${(curX * maxShift).toFixed(1)}px, ${(curY * maxShift).toFixed(1)}px)`;
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
 function init() {
+  currentLang = detectLang();
+  applyLang(currentLang);
+  initLangSwitch();
+  initParticles();
+  initParallax();
+
   const enterText = document.querySelector('.page-enter-text');
   const playOnEnter = initMusicPlayer();
 

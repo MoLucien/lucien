@@ -41,6 +41,7 @@
 .page-enter-text:focus-visible,
 .social:focus-visible,
 .ctrl-btn:focus-visible,
+.lang-btn:focus-visible,
 .progress:focus-visible,
 .volume:focus-visible {
   outline: 2px solid var(--iconColor);
@@ -81,6 +82,13 @@ body {
   z-index: -4;
 }
 
+#particles {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+}
+
 .page-enter-text {
   position: fixed;
   inset: 0;
@@ -113,6 +121,8 @@ body.entering .card-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
+  perspective: 1000px;
+  will-change: transform;
   transition: opacity 0.6s ease;
 }
 
@@ -159,6 +169,40 @@ body.entering .card-wrap {
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+.lang-switch {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+
+.lang-btn {
+  padding: 3px 7px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--textColorDarker);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(232, 232, 232, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.lang-btn:hover {
+  color: var(--textColor);
+  border-color: rgba(232, 232, 232, 0.35);
+}
+
+.lang-btn.active {
+  color: #000;
+  background: var(--iconColor);
+  border-color: var(--iconColor);
 }
 
 .avatar-box {
@@ -482,6 +526,14 @@ body.entering .card-wrap {
   .card {
     padding: 25px 12px;
   }
+  .lang-switch {
+    top: 8px;
+    right: 8px;
+  }
+  .lang-btn {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
   .username {
     font-size: 22px;
   }
@@ -529,5 +581,11 @@ body.entering .card-wrap {
   }
   .page-enter-text {
     display: none !important;
+  }
+  #particles {
+    display: none !important;
+  }
+  .card-wrap {
+    transform: none !important;
   }
 }
