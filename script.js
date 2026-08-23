@@ -179,6 +179,7 @@ function initMusicPlayer() {
   const musicDuration = document.getElementById('musicDuration');
 
   let currentIdx = 0;
+  let hasPlayed = false; // 标记是否已经播放过
 
   const PLAY_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
   const PAUSE_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M14 19V5q0-.425.288-.713T15 4h5q.425 0 .713.288T21 5v14q0 .425-.288.713T20 20h-5q-.425 0-.712-.288T14 19M3 19V5q0-.425.288-.713T4 4h5q.425 0 .713.288T10 5v14q0 .425-.288.713T9 20H4q-.425 0-.712-.288T3 19"/></svg>';
@@ -257,21 +258,36 @@ function initMusicPlayer() {
 
   if (TRACKS.length) loadTrack(0);
 
+  // 修改后的播放函数：尝试播放，如果被阻止则等待用户交互
   function playOnEnter() {
-    audio.play().then(() => {
-      playBtn.innerHTML = PAUSE_SVG;
-      playBtn.setAttribute('aria-label', t('ariaPause'));
-    }).catch((err) => {
-      console.warn('[music] 首次播放失败,尝试静音解锁后重试:', err);
-      audio.muted = true;
-      audio.play().then(() => {
-        audio.muted = false;
+    audio.play()
+      .then(() => {
         playBtn.innerHTML = PAUSE_SVG;
         playBtn.setAttribute('aria-label', t('ariaPause'));
-      }).catch((err2) => {
-        console.error('[music] 静音重试仍然失败,浏览器拒绝自动播放:', err2);
+        hasPlayed = true; // 标记已成功播放
+      })
+      .catch(() => {
+        // 播放被阻止，等待用户首次点击页面
+        if (!hasPlayed) {
+          // 移除之前可能绑定的监听器（避免重复）
+          document.removeEventListener('click', handleFirstClick);
+          document.removeEventListener('touchstart', handleFirstClick);
+          // 绑定首次点击事件
+          document.addEventListener('click', handleFirstClick, { once: true });
+          document.addEventListener('touchstart', handleFirstClick, { once: true });
+        }
       });
-    });
+  }
+
+  // 用户首次点击页面时的处理函数
+  function handleFirstClick() {
+    audio.play()
+      .then(() => {
+        playBtn.innerHTML = PAUSE_SVG;
+        playBtn.setAttribute('aria-label', t('ariaPause'));
+        hasPlayed = true;
+      })
+      .catch(() => {});
   }
 
   return playOnEnter;
@@ -381,11 +397,15 @@ function init() {
   const enterText = document.querySelector('.page-enter-text');
   const playOnEnter = initMusicPlayer();
 
+  // 页面加载后，立即尝试播放（利用"进入"按钮的点击来触发）
   function onEnter() {
     enterText.classList.add('entered');
     document.body.classList.remove('entering');
     initTypewriter();
+    
+    // 调用播放函数（内部会处理自动播放或被阻止的情况）
     playOnEnter();
+    
     enterText.removeEventListener('click', onEnter);
     enterText.removeEventListener('keydown', onKeyEnter);
     enterText.removeEventListener('touchstart', onEnter);
