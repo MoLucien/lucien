@@ -22,7 +22,6 @@ const TRANSLATIONS = {
     ariaPlay: '播放',
     ariaPause: '暂停',
     ariaVolume: '音量',
-    ariaSeek: '播放进度',
     ariaEnter: '进入网站',
   },
   'zh-TW': {
@@ -37,7 +36,6 @@ const TRANSLATIONS = {
     ariaPlay: '播放',
     ariaPause: '暫停',
     ariaVolume: '音量',
-    ariaSeek: '播放進度',
     ariaEnter: '進入網站',
   },
   en: {
@@ -52,7 +50,6 @@ const TRANSLATIONS = {
     ariaPlay: 'Play',
     ariaPause: 'Pause',
     ariaVolume: 'Volume',
-    ariaSeek: 'Seek',
     ariaEnter: 'Enter site',
   },
 };
@@ -102,9 +99,6 @@ function applyLang(lang) {
   const volumeLabel = document.querySelector('label[for="volume"]');
   if (volumeLabel) volumeLabel.textContent = t('ariaVolume');
 
-  const progressBar = document.getElementById('progressBar');
-  if (progressBar) progressBar.setAttribute('aria-label', t('ariaSeek'));
-
   const bilibiliLink = document.querySelector('.social[href*="bilibili"]');
   if (bilibiliLink) bilibiliLink.setAttribute('data-tooltip', t('tooltipBilibili'));
 
@@ -142,13 +136,6 @@ function initTypewriter() {
   if (!el) return;
   twGeneration++;
   const myGen = twGeneration;
-
-  // 减弱动态偏好：静态显示第一段文案，不做打字机动画
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    el.textContent = t('typewriterTexts')[0];
-    return;
-  }
-
   let textIdx = 0, charIdx = 0, deleting = false;
 
   function tick() {
@@ -192,16 +179,10 @@ function initMusicPlayer() {
   const musicDuration = document.getElementById('musicDuration');
 
   let currentIdx = 0;
-  let playAttempted = false;
+  let playAttempted = false; // 是否已经尝试过播放
 
   const PLAY_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
   const PAUSE_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M14 19V5q0-.425.288-.713T15 4h5q.425 0 .713.288T21 5v14q0 .425-.288.713T20 20h-5q-.425 0-.712-.288T14 19M3 19V5q0-.425.288-.713T4 4h5q.425 0 .713.288T10 5v14q0 .425-.288.713T9 20H4q-.425 0-.712-.288T3 19"/></svg>';
-
-  // 单曲时隐藏上一首/下一首（TRACKS 增加歌曲后自动恢复显示）
-  if (TRACKS.length < 2) {
-    prevBtn.hidden = true;
-    nextBtn.hidden = true;
-  }
 
   function loadTrack(idx) {
     if (!TRACKS.length) return;
@@ -210,25 +191,14 @@ function initMusicPlayer() {
     audio.src = track.src;
     musicTitle.textContent = track.title;
     musicCover.src = track.cover;
-    progressFill.style.transform = 'scaleX(0)';
+    progressFill.style.width = '0%';
     progressThumb.style.left = '0%';
     musicCurrent.textContent = '0:00';
     musicDuration.textContent = '0:00';
   }
 
-  // 懒加载：进入页面前不请求音频源，首次播放时才设置 src（省下 2.1MB 初始流量）
-  function ensureSource() {
-    if (!audio.getAttribute('src') && TRACKS.length) {
-      const track = TRACKS[currentIdx];
-      audio.src = track.src;
-      musicTitle.textContent = track.title;
-      musicCover.src = track.cover;
-    }
-  }
-
   function togglePlay() {
     if (audio.paused) {
-      ensureSource();
       audio.play().catch(() => {});
     } else {
       audio.pause();
@@ -256,11 +226,9 @@ function initMusicPlayer() {
   audio.addEventListener('timeupdate', () => {
     if (!audio.duration) return;
     const pct = (audio.currentTime / audio.duration) * 100;
-    progressFill.style.transform = `scaleX(${(pct / 100).toFixed(4)})`;
+    progressFill.style.width = pct + '%';
     progressThumb.style.left = pct + '%';
     musicCurrent.textContent = formatTime(audio.currentTime);
-    progressBar.setAttribute('aria-valuenow', String(Math.round(pct)));
-    progressBar.setAttribute('aria-valuetext', `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`);
   });
 
   audio.addEventListener('ended', () => {
@@ -288,67 +256,48 @@ function initMusicPlayer() {
   window.addEventListener('touchmove', (e) => { if (dragging) seekFromEvent(e); }, { passive: true });
   window.addEventListener('touchend', () => { dragging = false; });
 
-  // 键盘无障碍：方向键/Home/End 调整进度（Shift 加速）
-  progressBar.addEventListener('keydown', (e) => {
-    if (!audio.duration) return;
-    const step = e.shiftKey ? 10 : 5;
-    let target;
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowUp':
-        target = audio.currentTime + step;
-        break;
-      case 'ArrowLeft':
-      case 'ArrowDown':
-        target = audio.currentTime - step;
-        break;
-      case 'Home':
-        target = 0;
-        break;
-      case 'End':
-        target = audio.duration;
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-    audio.currentTime = Math.max(0, Math.min(audio.duration, target));
-  });
+  if (TRACKS.length) loadTrack(0);
 
-  // 初始只同步 UI，不加载音频（懒加载，见 ensureSource）
-  if (TRACKS.length) {
-    musicTitle.textContent = TRACKS[0].title;
-    musicCover.src = TRACKS[0].cover;
-  }
-
-  // ============ 播放控制（含自动播放策略回退） ============
-
+  // ============ 核心：自动播放增强方案 ============
+  
+  // 尝试播放函数
   function attemptPlay() {
     if (playAttempted) return; // 已经尝试过就不再重复
     playAttempted = true;
-
-    ensureSource();
+    
     audio.play()
       .then(() => {
-        // 播放成功后移除所有备用监听器（图标切换由 play 事件统一处理）
+        playBtn.innerHTML = PAUSE_SVG;
+        playBtn.setAttribute('aria-label', t('ariaPause'));
+        console.log('✅ 音乐播放成功！');
+        // 播放成功后移除所有备用监听器
         document.removeEventListener('click', handleAnyInteraction);
         document.removeEventListener('touchstart', handleAnyInteraction);
         document.removeEventListener('keydown', handleAnyInteraction);
       })
-      .catch(() => {
-        // 自动播放被阻止：监听用户的下一次交互
+      .catch((error) => {
+        console.warn('⚠️ 自动播放被阻止:', error.message);
+        // 如果被阻止，监听用户的下一次交互
         document.addEventListener('click', handleAnyInteraction, { once: true });
         document.addEventListener('touchstart', handleAnyInteraction, { once: true });
         document.addEventListener('keydown', handleAnyInteraction, { once: true });
       });
   }
 
+  // 用户交互处理函数
   function handleAnyInteraction() {
     if (!audio.paused) return; // 已经在播放就不重复触发
-    ensureSource();
-    audio.play().catch(() => {});
+    
+    audio.play()
+      .then(() => {
+        playBtn.innerHTML = PAUSE_SVG;
+        playBtn.setAttribute('aria-label', t('ariaPause'));
+        console.log('✅ 用户交互后播放成功！');
+      })
+      .catch(() => {});
   }
 
+  // 返回播放函数
   function playOnEnter() {
     // 延迟一点点，确保音频元素已完全加载
     setTimeout(attemptPlay, 200);
@@ -427,9 +376,18 @@ function initParallax() {
   if (window.matchMedia('(pointer: coarse)').matches) return;
 
   let targetX = 0, targetY = 0, curX = 0, curY = 0;
-  let running = false;
   const maxShift = 10;
   const maxTilt = 4;
+
+  window.addEventListener('mousemove', (e) => {
+    targetX = (e.clientX / window.innerWidth) * 2 - 1;
+    targetY = (e.clientY / window.innerHeight) * 2 - 1;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    targetX = 0;
+    targetY = 0;
+  });
 
   function loop() {
     curX += (targetX - curX) * 0.06;
@@ -437,32 +395,9 @@ function initParallax() {
     wrap.style.transform =
       `rotateY(${(curX * maxTilt).toFixed(2)}deg) rotateX(${(-curY * maxTilt).toFixed(2)}deg) ` +
       `translate(${(curX * maxShift).toFixed(1)}px, ${(curY * maxShift).toFixed(1)}px)`;
-    // 追平目标后停止 rAF（空闲不再空转，省 CPU/电量），下次鼠标移动再唤醒
-    if (Math.abs(targetX - curX) < 0.002 && Math.abs(targetY - curY) < 0.002) {
-      running = false;
-      return;
-    }
     requestAnimationFrame(loop);
   }
-
-  function kick() {
-    if (!running) {
-      running = true;
-      requestAnimationFrame(loop);
-    }
-  }
-
-  window.addEventListener('mousemove', (e) => {
-    targetX = (e.clientX / window.innerWidth) * 2 - 1;
-    targetY = (e.clientY / window.innerHeight) * 2 - 1;
-    kick();
-  });
-
-  window.addEventListener('mouseleave', () => {
-    targetX = 0;
-    targetY = 0;
-    kick();
-  });
+  loop();
 }
 
 function init() {
@@ -473,38 +408,14 @@ function init() {
   initParallax();
 
   const enterText = document.querySelector('.page-enter-text');
-  const cardWrap = document.querySelector('.card-wrap');
   const playOnEnter = initMusicPlayer();
 
-  // 页面切到后台时暂停背景视频，回来再继续（省电、降低占用）
-  const bgVideo = document.getElementById('background');
-  if (bgVideo) {
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        bgVideo.pause();
-      } else {
-        bgVideo.play().catch(() => {});
-      }
-    });
-  }
-
-  let entered = false;
-
   function onEnter() {
-    if (entered) return;
-    entered = true;
-    if (cardWrap) cardWrap.inert = false; // 解除卡片的不可聚焦状态
     enterText.classList.add('entered');
     document.body.classList.remove('entering');
     initTypewriter();
     playOnEnter(); // 调用播放函数
-
-    // 淡出结束后从无障碍树与 Tab 顺序中彻底移除
-    setTimeout(() => {
-      enterText.hidden = true;
-      enterText.setAttribute('aria-hidden', 'true');
-    }, 900);
-
+    
     enterText.removeEventListener('click', onEnter);
     enterText.removeEventListener('keydown', onKeyEnter);
     enterText.removeEventListener('touchstart', onEnter);
@@ -517,16 +428,9 @@ function init() {
     }
   }
 
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    // 减弱动态偏好下进入遮罩被 CSS 隐藏：直接进入；音频在首次交互后播放
-    onEnter();
-  } else {
-    // 进入前卡片不可见：置为 inert，避免 Tab 聚焦到隐藏元素
-    if (cardWrap) cardWrap.inert = true;
-    enterText.addEventListener('click', onEnter);
-    enterText.addEventListener('keydown', onKeyEnter);
-    enterText.addEventListener('touchstart', onEnter, { passive: true });
-  }
+  enterText.addEventListener('click', onEnter);
+  enterText.addEventListener('keydown', onKeyEnter);
+  enterText.addEventListener('touchstart', onEnter, { passive: true });
 }
 
 if (document.readyState === 'loading') {
