@@ -100,6 +100,10 @@ const TRACKS = [
 2. 更新 `style.css` 中 `@font-face` 的 `src` 与 `font-family`;
 3. 若主字体文件名变化,同步更新 `index.html` 中的两个 `<link rel="preload">`。
 
+### 缓存与版本号(部署注意)
+
+GitHub Pages 对所有文件强制 10 分钟缓存且无法修改,更新期间可能出现新旧文件混搭。因此 `index.html`、`style.css`、`script.js` 中对 CSS / JS / 图片 / 视频的引用均带 `?v=N` 版本参数:**修改这些文件内容后,把对应引用的 `?v=` 数字统一加 1**(含 `style.css` 内 3 处字体引用、`script.js` 中封面图),访客即可立即拿到新版,不会出现新旧混搭。
+
 ### 粒子 / 视差效果
 
 在 `script.js` 的 `initParticles()` 中调整 `COUNT`(粒子数量)、`r`/`alpha`(大小与透明度)等参数;`initParallax()` 中的 `maxShift`(位移幅度)、`maxTilt`(倾斜角度)控制视差强度。两者均会在用户开启"减弱动态效果"系统偏好,或触屏设备(视差)时自动关闭。

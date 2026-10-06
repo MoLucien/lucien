@@ -6,7 +6,7 @@ const CONFIG = {
 };
 
 const TRACKS = [
-  { title: 'Change Your Life', src: './assets/music.mp3', cover: './assets/cover.gif' },
+  { title: 'Change Your Life', src: './assets/music.mp3', cover: './assets/cover.gif?v=2' },
 ];
 
 const TRANSLATIONS = {
@@ -197,12 +197,6 @@ function initMusicPlayer() {
   const PLAY_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
   const PAUSE_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M14 19V5q0-.425.288-.713T15 4h5q.425 0 .713.288T21 5v14q0 .425-.288.713T20 20h-5q-.425 0-.712-.288T14 19M3 19V5q0-.425.288-.713T4 4h5q.425 0 .713.288T10 5v14q0 .425-.288.713T9 20H4q-.425 0-.712-.288T3 19"/></svg>';
 
-  // 单曲时隐藏上一首/下一首（TRACKS 增加歌曲后自动恢复显示）
-  if (TRACKS.length < 2) {
-    prevBtn.hidden = true;
-    nextBtn.hidden = true;
-  }
-
   function loadTrack(idx) {
     if (!TRACKS.length) return;
     currentIdx = (idx + TRACKS.length) % TRACKS.length;
@@ -210,7 +204,7 @@ function initMusicPlayer() {
     audio.src = track.src;
     musicTitle.textContent = track.title;
     musicCover.src = track.cover;
-    progressFill.style.transform = 'scaleX(0)';
+    progressFill.style.width = '0%';
     progressThumb.style.left = '0%';
     musicCurrent.textContent = '0:00';
     musicDuration.textContent = '0:00';
@@ -256,7 +250,7 @@ function initMusicPlayer() {
   audio.addEventListener('timeupdate', () => {
     if (!audio.duration) return;
     const pct = (audio.currentTime / audio.duration) * 100;
-    progressFill.style.transform = `scaleX(${(pct / 100).toFixed(4)})`;
+    progressFill.style.width = pct + '%';
     progressThumb.style.left = pct + '%';
     musicCurrent.textContent = formatTime(audio.currentTime);
     progressBar.setAttribute('aria-valuenow', String(Math.round(pct)));
