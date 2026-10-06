@@ -2,7 +2,7 @@
 
 一个纯前端实现的个人主页 / 社交聚合页(Bio Link Page),暗色玻璃拟态风格,配全屏背景视频、打字机文案轮播与内置音乐播放器。
 
-**在线预览:** _(在此处填写你的部署地址)_
+**在线预览:** https://molucien.github.io/lucien/
 
 ## ✨ 功能特性
 
@@ -12,8 +12,11 @@
 - 🔮 玻璃拟态(Glassmorphism)卡片,带流光边框动画
 - ⌨️ 打字机效果的多段文案轮播
 - 🌐 简体中文 / 繁体中文 / English 三语切换,自动检测浏览器语言并记住选择
-- 🎵 内置音乐播放器(播放/暂停、上一首/下一首、进度条拖拽、音量调节,支持鼠标与触屏)
+- 🎵 内置音乐播放器(播放/暂停、进度条拖拽、音量调节,支持鼠标与触屏;音频懒加载——进入页面后才请求音频文件,不占用初始流量)
 - 🔗 社交链接(Discord / Bilibili / Steam / X),悬浮显示提示文字
+- 🚀 字体本地自托管(Silkscreen / Onest,woff2 子集),无第三方字体 CDN 依赖,加载稳定
+- ⌨️ 播放进度条支持键盘操作(← → 步进 5 秒,Shift 步进 10 秒,Home / End 跳转首尾)
+- 🔋 标签页切到后台时自动暂停背景视频,视差动画空闲时自动停止,省电低占用
 - 📱 响应式布局,适配移动端与短屏幕设备
 - ♿ 支持键盘操作(Tab 聚焦、Enter/空格进入)与 `prefers-reduced-motion` 无障碍偏好(自动关闭粒子与视差动效)
 - 🖱️ 点击/回车/触屏进入页面后才开始播放背景音乐,符合浏览器自动播放策略
@@ -25,20 +28,26 @@
 ## 📁 目录结构
 
 ```
-lucien-main/
+lucien/
 ├── index.html            # 页面结构与内容
-├── style.css              # 样式与动画
+├── style.css              # 样式与动画(顶部含自托管字体 @font-face)
 ├── script.js               # 打字机、音乐播放器等交互逻辑
+├── robots.txt                # 搜索引擎抓取配置
+├── sitemap.xml                 # 站点地图
 ├── LICENSE
 └── assets/
-    ├── avatar.png          # 头像(PNG 兜底,同时用作 favicon / OG 图)
-    ├── avatar.webp          # 头像(WebP,体积更小,优先加载)
-    ├── background.mp4       # 背景视频
-    ├── bg-poster.jpg          # 背景视频首帧封面图(视频加载完成前占位)
-    ├── cover.gif               # 音乐封面
-    ├── music.mp3                # 背景音乐
-    ├── badge-custom.webp         # 自定义徽章
-    └── cursor.png                 # 自定义光标
+    ├── avatar.webp          # 头像(WebP,优先加载)
+    ├── avatar.jpg            # 头像(JPEG 兜底与兼容)
+    ├── favicon.png            # 站点图标(由头像生成)
+    ├── apple-touch-icon.png    # iOS 添加到主屏图标
+    ├── og-cover.jpg             # 社交分享卡片图(1200×630)
+    ├── background.mp4            # 背景视频(已压缩,~1.2MB)
+    ├── bg-poster.jpg              # 背景视频首帧封面图(视频加载完成前占位)
+    ├── cover.gif                   # 音乐封面
+    ├── music.mp3                    # 背景音乐(懒加载)
+    ├── fonts/                        # 自托管字体(Silkscreen / Onest,OFL 授权)
+    ├── badge-custom.webp              # 自定义徽章(备用)
+    └── cursor.png                      # 自定义光标(备用)
 ```
 
 ## 🚀 本地运行
@@ -83,6 +92,14 @@ const TRACKS = [
 
 翻译文案集中在 `script.js` 顶部的 `TRANSLATIONS` 对象中,按语言代码(`zh-CN` / `zh-TW` / `en`)分组,新增文案字段后记得在三个语言块中都补上对应翻译。语言检测优先级:用户上次选择(存于 `localStorage`)→ 浏览器语言 → 默认英文。
 
+### 字体
+
+站点字体(Silkscreen / Onest,均为 OFL 授权,见 `assets/fonts/LICENSE.txt`)以 woff2 子集形式自托管在 `assets/fonts/`,声明位于 `style.css` 顶部。替换字体时:
+
+1. 将新字体(建议 woff2)放入 `assets/fonts/`;
+2. 更新 `style.css` 中 `@font-face` 的 `src` 与 `font-family`;
+3. 若主字体文件名变化,同步更新 `index.html` 中的两个 `<link rel="preload">`。
+
 ### 粒子 / 视差效果
 
 在 `script.js` 的 `initParticles()` 中调整 `COUNT`(粒子数量)、`r`/`alpha`(大小与透明度)等参数;`initParallax()` 中的 `maxShift`(位移幅度)、`maxTilt`(倾斜角度)控制视差强度。两者均会在用户开启"减弱动态效果"系统偏好,或触屏设备(视差)时自动关闭。
@@ -111,8 +128,8 @@ const TRACKS = [
 
 替换 `assets/` 下对应文件即可。建议:
 
-- 头像:512×512 左右足够(页面实际只显示 110px),同时提供 `.webp`(体积小,优先加载)与 `.png`(兼容性好,用于 favicon / OG 图)
-- 背景视频:建议控制在 3–5MB 以内,并生成一张首帧图作为 `poster`,提升首屏加载体验
+- 头像:`avatar.webp`(优先加载)与 `avatar.jpg`(兜底),当前尺寸 512×512(页面显示 110px,足够覆盖高分屏)。替换后如需同步图标与分享图,重新生成 `favicon.png`、`apple-touch-icon.png` 与 `og-cover.jpg`(1200×630),并检查 `index.html` 中 `og:image` 的绝对 URL
+- 背景视频:当前已压缩至约 1.2MB;建议控制在 3MB 以内,并保持首帧图 `bg-poster.jpg` 与视频画面一致
 
 ```bash
 # 压缩视频示例
