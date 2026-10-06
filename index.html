@@ -3,8 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="dark">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="google" content="notranslate">
   <meta name="robots" content="index, follow">
@@ -13,21 +14,50 @@
   <meta name="description" content="Digital Dream ✦ Chill Vibes">
   <meta name="author" content="⚝ MoLucien ⚝">
 
+  <link rel="canonical" href="https://molucien.github.io/lucien/">
+
   <meta property="og:title" content="⚝ MoLucien ⚝">
   <meta property="og:description" content="Digital Dream ✦ Chill Vibes">
-  <meta property="og:image" content="./assets/avatar.png">
+  <meta property="og:image" content="https://molucien.github.io/lucien/assets/og-cover.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://molucien.github.io/lucien/">
+  <meta property="og:site_name" content="MoLucien">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="⚝ MoLucien ⚝">
   <meta name="twitter:description" content="Digital Dream ✦ Chill Vibes">
+  <meta name="twitter:image" content="https://molucien.github.io/lucien/assets/og-cover.jpg">
 
-  <link rel="icon" href="./assets/avatar.png" sizes="any">
+  <link rel="icon" href="./assets/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
 
   <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Onest:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="preload" as="video" href="./assets/background.mp4" type="video/mp4">
+  <link rel="preload" href="./assets/fonts/silkscreen-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/silkscreen-700.woff2" as="font" type="font/woff2" crossorigin>
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "MoLucien",
+      "url": "https://molucien.github.io/lucien/",
+      "image": "https://molucien.github.io/lucien/assets/og-cover.jpg",
+      "sameAs": [
+        "https://discord.gg/VKV3YGBd",
+        "https://space.bilibili.com/2123896414",
+        "https://steamcommunity.com/profiles/76561199172906689/",
+        "https://x.com/MoLucien"
+      ]
+    }
+  </script>
+
+  <noscript>
+    <style>
+      body.entering .card-wrap { opacity: 1 !important; }
+      .page-enter-text { display: none !important; }
+    </style>
+  </noscript>
 
 </head>
 
@@ -58,15 +88,15 @@
       <div class="avatar-box">
         <picture>
           <source srcset="./assets/avatar.webp" type="image/webp">
-          <img src="./assets/avatar.png" class="avatar" alt="MoLucien avatar" width="110" height="110">
+          <img src="./assets/avatar.jpg" class="avatar" alt="MoLucien avatar" width="110" height="110" decoding="async">
         </picture>
       </div>
 
       <h1 class="username" data-text="⚝ MoLucien ⚝">⚝ MoLucien ⚝</h1>
 
-      <h3 class="typewriter-wrap">
+      <h2 class="typewriter-wrap">
         <span class="typewriter"></span><span class="typewriter-cursor">|</span>
-      </h3>
+      </h2>
 
       <div class="location" data-tooltip="Location">
         <svg viewBox="4 2 16 20" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M12 12q.825 0 1.413-.587T14 10t-.587-1.412T12 8t-1.412.588T10 10t.588 1.413T12 12m0 10q-4.025-3.425-6.012-6.362T4 10.2q0-3.75 2.413-5.975T12 2t5.588 2.225T20 10.2q0 2.5-1.987 5.438T12 22"/></svg>
@@ -89,12 +119,13 @@
       </div>
 
       <div class="music-player">
-        <img src="./assets/cover.gif" class="music-cover" alt="cover" id="musicCover">
+        <img src="./assets/cover.gif" class="music-cover" alt="cover" id="musicCover" width="56" height="56" decoding="async">
         <div class="music-info">
           <div class="music-title" id="musicTitle">Change Your Life</div>
           <div class="music-time-row">
             <span class="music-time" id="musicCurrent">0:00</span>
-            <div class="progress" id="progressBar">
+            <div class="progress" id="progressBar" role="slider" tabindex="0" aria-label="Seek"
+                 aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00">
               <div class="progress-fill" id="progressFill"></div>
               <div class="progress-thumb" id="progressThumb"></div>
             </div>
@@ -122,7 +153,7 @@
     </div>
   </div>
 
-  <audio id="music" preload="auto">
+  <audio id="music" preload="none">
     <source src="./assets/music.mp3" type="audio/mpeg">
   </audio>
 

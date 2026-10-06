@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://molucien.github.io/lucien/sitemap.xml
