@@ -84,10 +84,10 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background: var(--backgroundColor);
 }
 
 body {
+  background: var(--backgroundColor);
   font-family: 'Silkscreen', 'Onest', monospace, sans-serif;
   color: var(--textColor);
   display: flex;
