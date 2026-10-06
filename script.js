@@ -55,6 +55,36 @@ const TRANSLATIONS = {
     ariaSeek: 'Seek',
     ariaEnter: 'Enter site',
   },
+  ja: {
+    enterText: '⚝ クリックして MoLucien の領域へ ⚝',
+    typewriterTexts: ['デジタルドリーム ✦ チルな雰囲気', '私の領域へようこそ', 'しばらくのんびりしてね'],
+    locationText: 'デジタル虚無の中に',
+    tooltipLocation: '場所',
+    tooltipVolume: '音量',
+    tooltipBilibili: 'ビリビリ',
+    ariaPrev: '前の曲',
+    ariaNext: '次の曲',
+    ariaPlay: '再生',
+    ariaPause: '一時停止',
+    ariaVolume: '音量',
+    ariaSeek: '再生位置',
+    ariaEnter: 'サイトに入る',
+  },
+  ko: {
+    enterText: '⚝ 클릭해서 MoLucien의 영역으로 ⚝',
+    typewriterTexts: ['디지털 드림 ✦ 편안한 분위기', '내 영역에 오신 것을 환영해요', '잠시 머물다 가요'],
+    locationText: '디지털 공허 속에',
+    tooltipLocation: '위치',
+    tooltipVolume: '볼륨',
+    tooltipBilibili: '빌리빌리',
+    ariaPrev: '이전 곡',
+    ariaNext: '다음 곡',
+    ariaPlay: '재생',
+    ariaPause: '일시정지',
+    ariaVolume: '볼륨',
+    ariaSeek: '재생 위치',
+    ariaEnter: '사이트 입장',
+  },
 };
 
 const LANG_STORAGE_KEY = 'lucien-lang';
@@ -68,6 +98,8 @@ function detectLang() {
   const nav = (navigator.language || 'en').toLowerCase();
   if (nav.includes('hant') || nav === 'zh-tw' || nav === 'zh-hk') return 'zh-TW';
   if (nav.startsWith('zh')) return 'zh-CN';
+  if (nav.startsWith('ja')) return 'ja';
+  if (nav.startsWith('ko')) return 'ko';
   return 'en';
 }
 
@@ -391,6 +423,16 @@ function initParticles() {
     for (const p of particles) {
       p.x += p.vx;
       p.y += p.vy;
+      // 鼠标排斥：距离越近推力越大
+      const dx = p.x - mouseX;
+      const dy = p.y - mouseY;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < REPEL_RADIUS * REPEL_RADIUS && d2 > 0.01) {
+        const d = Math.sqrt(d2);
+        const f = (1 - d / REPEL_RADIUS) * REPEL_FORCE;
+        p.x += (dx / d) * f;
+        p.y += (dy / d) * f;
+      }
       p.twinklePhase += p.twinkleSpeed;
       if (p.y < -5) { p.y = h + 5; p.x = Math.random() * w; }
       if (p.x < -5) p.x = w + 5;
@@ -403,6 +445,13 @@ function initParticles() {
     }
     requestAnimationFrame(tick);
   }
+
+  // 鼠标交互：靠近光标的粒子被轻柔推开（排斥效果）
+  let mouseX = -9999, mouseY = -9999;
+  const REPEL_RADIUS = 120;
+  const REPEL_FORCE = 1.8;
+  window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+  window.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
 
   let resizeTimer;
   window.addEventListener('resize', () => {
