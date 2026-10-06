@@ -519,13 +519,17 @@ function init() {
   const cardWrap = document.querySelector('.card-wrap');
   const playOnEnter = initMusicPlayer();
 
-  // 页面切到后台时暂停背景视频，回来再继续（省电、降低占用）
+  // 视频与音乐同步：点击进入（音乐开始播放）后视频一起播放；音乐暂停/继续时视频同步
   const bgVideo = document.getElementById('background');
-  if (bgVideo) {
+  const musicEl = document.getElementById('music');
+  if (bgVideo && musicEl) {
+    musicEl.addEventListener('play', () => { bgVideo.play().catch(() => {}); });
+    musicEl.addEventListener('pause', () => { bgVideo.pause(); });
+    // 页面切到后台：暂停视频省电；回来后仅在音乐仍在播放时恢复
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         bgVideo.pause();
-      } else {
+      } else if (!musicEl.paused) {
         bgVideo.play().catch(() => {});
       }
     });
